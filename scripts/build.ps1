@@ -18,10 +18,17 @@ if ($projectRoot -match '[^\x00-\x7F]') {
             $bytes = [System.Text.Encoding]::UTF8.GetBytes($projectRoot)
             $id = [System.BitConverter]::ToString($sha.ComputeHash($bytes)).Replace('-', '').Substring(0, 12)
         } finally { $sha.Dispose() }
-        $WorkspaceAlias = Join-Path ([System.IO.Path]::GetTempPath()) ('MiniRaster-Build-' + $id)
+        $WorkspaceAlias = Join-Path ([System.IO.Path]::GetTempPath()) ('MR' + $id)
     }
     $WorkspaceAlias = [System.IO.Path]::GetFullPath($WorkspaceAlias)
     if ($WorkspaceAlias -match '[^\x00-\x7F]') { throw 'WorkspaceAlias must be an ASCII path.' }
+    # GCC/libcpp may replace a user-file spelling with a shorter real path.
+    # An alias longer than the UTF-8 real root would reintroduce Unicode.
+    $aliasBytes = [System.Text.Encoding]::UTF8.GetByteCount($WorkspaceAlias.TrimEnd([char]'\'))
+    $sourceBytes = [System.Text.Encoding]::UTF8.GetByteCount($projectRoot.TrimEnd([char]'\'))
+    if ($aliasBytes -gt $sourceBytes) {
+        throw 'Use a shorter ASCII WorkspaceAlias, or an ASCII physical checkout path.'
+    }
     if (Test-Path -LiteralPath $WorkspaceAlias) {
         $item = Get-Item -LiteralPath $WorkspaceAlias -Force
         if ($item.LinkType -ne 'Junction') { throw 'WorkspaceAlias exists and is not a junction.' }

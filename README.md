@@ -49,9 +49,9 @@ ctest --test-dir build/release --output-on-failure
 .\build\release\miniraster.exe --scene cube --output output/cube.ppm
 ```
 
-Windows GCC 的 Debug、Release、UBSan 配置已有本机验证记录。Linux 和 MSVC 命令给出标准构建路线，实际验证状态见 [验证说明](docs/validation.md)。Windows GCC/Ninja 若遇非 ASCII 路径的依赖缓存问题，可先在 ASCII 路径中构建；这与渲染器的 UTF-8 文件输出支持是两项独立检查。
+Windows GCC 的 Debug、Release、UBSan 配置已有本机验证记录。GitHub Actions 已通过 Ubuntu GCC、Windows MSVC 的 Debug/Release，以及 Ubuntu Clang UBSan；实际范围见 [验证说明](docs/validation.md)。Windows GCC/Ninja 若遇非 ASCII 路径的依赖缓存问题，可先在 ASCII 路径中构建；这与渲染器的 UTF-8 文件输出支持是两项独立检查。
 
-也可使用 GCC/Ninja 辅助脚本。工具已加入 PATH 时运行 `./scripts/build.ps1 -Configuration Release`；便携工具链可用 `-ToolchainBin <ASCII工具目录>` 指定。脚本在工程路径包含非 ASCII 字符时创建受校验的临时目录别名，构建后恢复当前进程 PATH。`-EnableUBSan` 启用独立的 UBSan 构建目录。
+也可使用 GCC/Ninja 辅助脚本。工具已加入 PATH 时运行 `./scripts/build.ps1 -Configuration Release`；便携工具链可用 `-ToolchainBin <ASCII工具目录>` 指定。脚本在工程路径包含非 ASCII 字符时创建受校验的短目录别名，构建后恢复当前进程 PATH。如果默认临时路径仍然过长，使用 `-WorkspaceAlias <更短的ASCII路径>` 或 ASCII 实体检出目录；具体原因见验证说明。`-EnableUBSan` 启用独立的 UBSan 构建目录。
 
 ## 示例
 

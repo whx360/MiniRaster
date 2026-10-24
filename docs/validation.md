@@ -2,9 +2,11 @@
 
 ## 已有证据
 
-2026-10-23 的本机 Windows GCC 16.2.0 构建中，Debug、Release 和 UBSan 三种配置均通过六类 CTest。以下记录描述已执行的本机范围；Linux、MSVC 和 ThreadSanitizer 不计为已验证结果。仓库中的持续集成以实际运行状态为准。
+2026-10-23 的本机 Windows GCC 16.2.0 构建中，Debug、Release 和 UBSan 三种配置均通过六类 CTest。ThreadSanitizer 不计为已验证结果。
 
 2026-10-24，独立目录布局重新从源码构建，Windows GCC 16.2.0 的 Debug、Release、UBSan 仍各通过 6/6 项测试。分析脚本在独立布局下重新汇总 1323 个样本、63 组配置，统计值与保留的基线数据一致。
+
+同日首次[公开 CI 运行](https://github.com/whx360/MiniRaster/actions/runs/40063886839)的五个任务全部通过：Ubuntu GCC Debug/Release、Windows MSVC Debug/Release、Ubuntu Clang UBSan。Ubuntu Release 还复算并比对提交的统计汇总，执行小分辨率基准冒烟检查。结论限定于这些实际 runner 和配置，不外推为全部平台兼容。
 
 | CTest | 文件 | 主要断言 |
 |---|---|---|
@@ -34,7 +36,11 @@
 
 曾在 Windows GCC/CMake/Ninja 链路中复现：非 ASCII 工程路径的首次构建成功，但增量构建读取依赖缓存失败。生成构建文件与依赖缓存的路径编码不同，且编译器会把 ASCII 别名规范化回真实工具链路径。
 
-处理方式是通过稳定 ASCII 目录别名访问工程、工具链和构建目录，并在 MinGW GCC 配置中保留 `-no-canonical-prefixes` 与 `-fno-canonical-system-headers`。修复后重新检查首次与增量构建。该结论只适用于所测试工具链，不推断所有中文路径或 Ninja 版本都存在相同问题。
+处理方式是通过稳定 ASCII 目录别名访问工程、工具链和构建目录，并在 MinGW GCC 配置中保留 `-no-canonical-prefixes` 与 `-fno-canonical-system-headers`。但别名本身并非充分条件：独立目录回归中，过长别名仍被 GCC 的 Windows 预处理器替换为更短的真实中文路径，污染下一次读取的依赖缓存。
+
+[GCC 的 `maybe_shorter_path` 实现](https://github.com/gcc-mirror/gcc/blob/releases/gcc-16.2.0/libcpp/files.cc)会对非系统文件比较路径长度。辅助脚本因此采用短别名，并检查其 UTF-8 字节长度不超过真实根；过长时明确报错，要求更短的 `WorkspaceAlias` 或 ASCII 实体检出路径。既有缓存若已写入中文依赖，需要先保存必要诊断并重新生成该构建目录。该结论只适用于所测试链路，不推断所有中文路径或 Ninja 版本都失败。
+
+2026-10-24 的该项回归中，短别名下首次构建与连续增量构建均通过 6/6 项 CTest；第二次 Ninja 确认无需重新编译。依赖输出探针未再出现真实中文工程路径。
 
 命令行文件路径采用另一项独立契约：Windows 读取宽字符命令行后转为 UTF-8，文件操作用 `std::filesystem::u8path`。CLI 测试实际生成 `中文输出/三角形.ppm`，并检查 64×48 图像的 P6 头和 9229 字节长度。构建系统路径兼容与运行期 UTF-8 输出需要分别验证。
 
