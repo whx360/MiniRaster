@@ -1,0 +1,23 @@
+{
+  "cube": {
+    "reference_ms": 3.096,
+    "tile_ms": 3.025,
+    "parallel_ms": 0.973,
+    "parallel_speedup": 3.108941418293936,
+    "overall_speedup": 3.18191161356629
+  },
+  "small": {
+    "reference_ms": 3.571,
+    "tile_ms": 3.825,
+    "parallel_ms": 3.186,
+    "parallel_speedup": 1.2005649717514124,
+    "overall_speedup": 1.120841180163214
+  },
+  "overdraw": {
+    "reference_ms": 73.076,
+    "tile_ms": 73.374,
+    "parallel_ms": 20.04,
+    "parallel_speedup": 3.661377245508982,
+    "overall_speedup": 3.6465069860279438
+  }
+}

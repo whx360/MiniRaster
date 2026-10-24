@@ -1,0 +1,9 @@
+{
+  "CPU": "AMD Ryzen 7 7435H",
+  "LogicalProcessors": 16,
+  "OS": "Microsoft Windows NT 10.0.26300.0",
+  "Compiler": "GCC 16.2.0",
+  "Build": "Release -O3 -DNDEBUG",
+  "Date": "2026-10-23",
+  "Notes": "Interactive Windows desktop; no controlled clock/power isolation; pool construction and I/O excluded; clear,transform,clip,render and frame temporary cleanup included"
+}

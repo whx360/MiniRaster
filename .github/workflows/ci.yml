@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }} / ${{ matrix.configuration }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} -DBUILD_TESTING=ON
+      - name: Build
+        run: cmake --build build --config ${{ matrix.configuration }} --parallel 2
+      - name: Test
+        run: ctest --test-dir build -C ${{ matrix.configuration }} --output-on-failure --no-tests=error
+      - name: Recompute recorded benchmark summary
+        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release'
+        run: |
+          python3 scripts/analyze_bench.py --output-dir build/benchmark-summary
+          cmake -E compare_files benchmarks/results/summary.csv build/benchmark-summary/summary.csv
+      - name: Benchmark smoke test
+        if: matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release'
+        run: ./build/render_bench --width 64 --height 48 --repeats 3 --warmups 1 --max-threads 2 --output build/smoke.csv
+
+  undefined-behavior:
+    name: Ubuntu / Clang UBSan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure UBSan
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=clang++ -DMINIRASTER_UBSAN=ON -DBUILD_TESTING=ON
+      - name: Build
+        run: cmake --build build --parallel 2
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --no-tests=error
